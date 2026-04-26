@@ -269,13 +269,23 @@ export const plugin: Plugin = function() {
         return;
       }
 
+      const items = await Promise.all(
+        pages.map(async(page) => {
+          const date = page.path?.split('/').pop() ?? '';
+          const content = await fetchPageContent(page.path ?? '');
+
+          return `
+            <div class="growi-calendar-viewer-item">
+              <div><strong>${date}</strong></div>
+              <div class="growi-calendar-viewer-content">${content}</div>
+            </div>
+          `;
+        }),
+      );
+
       viewerElement.innerHTML = `
         <div class="growi-calendar-viewer-list">
-          ${pages.map((page) => {
-            const date = page.path?.split('/').pop() ?? '';
-
-            return `<div class="growi-calendar-viewer-item">${date}</div>`;
-          }).join('')}
+          ${items.join('')}
         </div>
       `;
     };
@@ -334,6 +344,18 @@ export const plugin: Plugin = function() {
 
       injectStyle();
       highlightExistingDates(calendarId, existingDates);
+    };
+
+    const fetchPageContent = async(pagePath: string) => {
+      const res = await fetch(`/_api/v3/page?path=${encodeURIComponent(pagePath)}`);
+
+      if (!res.ok) {
+        return '';
+      }
+
+      const json = await res.json();
+
+      return json.page?.revision?.body ?? '';
     };
   };
 };
