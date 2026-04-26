@@ -20,6 +20,8 @@ export const plugin: Plugin = function() {
           const [month, year] = Object.keys(n.attributes);
           const lang = n.attributes.lang || 'en';
           const separator = n.attributes.separator || '/';
+          const basePath = n.attributes.basePath || '.';
+          console.log('basePath=' + basePath);
           n.type = 'html';
           n.value = '<div id="calendar"></div>';
           console.log(month, year, lang);
@@ -38,9 +40,12 @@ export const plugin: Plugin = function() {
                   async clickDay(event, self) {
                     if (clicked) return;
                     clicked = true;
+                    // const page = self.selectedDates[0].replaceAll(/-/g, separator);
+                    // const path = await getPagePath();
+                    // location.href = `${path}${page}`;
                     const page = self.selectedDates[0].replaceAll(/-/g, separator);
-                    const path = await getPagePath();
-                    location.href = `${path}${page}`;
+                    const resolvedBasePath = await resolveBasePath(basePath);
+                    location.href = resolvedBasePath === '' ? `/${page}` : `${resolvedBasePath}/${page}`;
                   },
                 },
               });
@@ -56,13 +61,30 @@ export const plugin: Plugin = function() {
       }
     });
 
-    const getPagePath = async() => {
-      if (location.pathname === '/') return '/';
+    // const getPagePath = async() => {
+    //   if (location.pathname === '/') return '/';
+    //   const pageId = location.pathname.replace(/\//, '');
+    //   const res = await fetch(`/_api/v3/page?pageId=${pageId}`);
+    //   const json = await res.json();
+    //   const { path } = json.page;
+    //   return `${path}/`;
+    // };
+    const getCurrentPagePath = async() => {
+      if (location.pathname === '/') return '';
+
       const pageId = location.pathname.replace(/\//, '');
       const res = await fetch(`/_api/v3/page?pageId=${pageId}`);
       const json = await res.json();
-      const { path } = json.page;
-      return `${path}/`;
+
+      return json.page.path as string;
+    };
+
+    const resolveBasePath = async(basePath: string) => {
+      if (basePath === '.' || basePath === '') {
+        return getCurrentPagePath();
+      }
+
+      return basePath.replace(/\/$/, '');
     };
   };
 };
