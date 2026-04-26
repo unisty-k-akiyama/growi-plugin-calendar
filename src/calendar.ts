@@ -190,6 +190,8 @@ export const plugin: Plugin = function() {
           background-color: #cfe8ff !important;
           border-radius: 6px;
           font-weight: bold;
+          text-decoration: underline;
+          text-underline-offset: 3px;
         }
       `;
       document.head.appendChild(style);
@@ -206,7 +208,11 @@ export const plugin: Plugin = function() {
         const targetButton = calendarElement.querySelector(
           `[data-calendar-day="${date}"]`
         );
+
         targetButton?.classList.add('growi-calendar-existing-page');
+
+        // ホバー時にブラウザ標準のツールチップを表示する
+        targetButton?.setAttribute('title', date);
       });
     };
 
