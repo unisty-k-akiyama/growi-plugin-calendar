@@ -102,6 +102,43 @@ export const plugin: Plugin = function() {
             void renderCalendarViewer(viewerId, basePath, limit);
           }, 100);
         }
+        if (n.type === 'text' && typeof n.value === 'string') {
+          const regex = /\$calendar_viewer\((.*?)\)/g;
+          let match;
+          const parts: string[] = [];
+          let lastIndex = 0;
+
+          while ((match = regex.exec(n.value)) !== null) {
+            const before = n.value.slice(lastIndex, match.index);
+            if (before) parts.push(before);
+
+            const args = match[1].split(',');
+            const basePath = (args[0] || '.').trim();
+            const limit = Number((args[1] || '5').trim());
+
+            const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
+
+            parts.push(`<div id="${viewerId}">読み込み中...</div>`);
+
+            const id = setInterval(() => {
+              const el = document.querySelector(`#${viewerId}`);
+              if (el == null) return;
+
+              clearInterval(id);
+              void renderCalendarViewer(viewerId, basePath, limit);
+            }, 100);
+
+            lastIndex = regex.lastIndex;
+          }
+
+          const after = n.value.slice(lastIndex);
+          if (after) parts.push(after);
+
+          if (lastIndex > 0) {
+            n.type = 'html';
+            n.value = parts.join('');
+          }
+        }
       }
       catch (e) {
         n.type = 'html';
