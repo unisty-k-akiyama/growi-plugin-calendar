@@ -85,14 +85,22 @@ export const plugin: Plugin = function() {
         }
 
         if (n.type === 'leafGrowiPluginDirective' && n.name === 'calendar_viewer') {
+          const [basePathArg, limitArg] = Object.keys(n.attributes);
+          const basePath = basePathArg || '.';
+          const limit = Number(limitArg || 5);
           const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
 
           n.type = 'html';
-          n.value = `
-            <div id="${viewerId}" class="growi-calendar-viewer">
-              calendar_viewer 読み込みテスト
-            </div>
-          `;
+          n.value = `<div id="${viewerId}" class="growi-calendar-viewer">読み込み中...</div>`;
+
+          const id = setInterval(() => {
+            const viewerElement = document.querySelector(`#${viewerId}`);
+
+            if (viewerElement == null) return;
+
+            clearInterval(id);
+            void renderCalendarViewer(viewerId, basePath, limit);
+          }, 100);
         }
       }
       catch (e) {
@@ -189,6 +197,51 @@ export const plugin: Plugin = function() {
 
       pagesCache.set(basePath, allPages);
       return allPages;
+    };
+
+    const getLatestDatePages = async(basePath: string, limit: number) => {
+      const resolvedBasePath = await resolveBasePath(basePath);
+      const pages = await fetchPagesByBasePath(resolvedBasePath);
+
+      return pages
+        .filter((page) => {
+          const name = page.path?.split('/').pop();
+
+          return name != null && /^\d{4}-\d{2}-\d{2}$/.test(name);
+        })
+        .sort((a, b) => {
+          const aName = a.path?.split('/').pop() ?? '';
+          const bName = b.path?.split('/').pop() ?? '';
+
+          return bName.localeCompare(aName);
+        })
+        .slice(0, limit);
+    };
+
+    const renderCalendarViewer = async(
+      viewerId: string,
+      basePath: string,
+      limit: number,
+    ) => {
+      const viewerElement = document.querySelector(`#${viewerId}`);
+      if (viewerElement == null) return;
+
+      const pages = await getLatestDatePages(basePath, limit);
+
+      if (pages.length === 0) {
+        viewerElement.innerHTML = '<div>表示対象の記事はありません。</div>';
+        return;
+      }
+
+      viewerElement.innerHTML = `
+        <div class="growi-calendar-viewer-list">
+          ${pages.map((page) => {
+            const date = page.path?.split('/').pop() ?? '';
+
+            return `<div class="growi-calendar-viewer-item">${date}</div>`;
+          }).join('')}
+        </div>
+      `;
     };
 
     const injectStyle = () => {
