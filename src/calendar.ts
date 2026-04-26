@@ -126,17 +126,6 @@ export const plugin: Plugin = function() {
       }
     };
 
-    const existsPage = async(path: string) => {
-      const res = await fetch(`/_api/v3/page?path=${encodeURIComponent(path)}`);
-
-      if (!res.ok) {
-        return false;
-      }
-
-      const json = await res.json();
-      return json.page != null;
-    };
-
     const getExistingDates = async(
       basePath: string,
       year: number,
@@ -144,25 +133,27 @@ export const plugin: Plugin = function() {
       separator: string,
     ) => {
       const resolvedBasePath = await resolveBasePath(basePath);
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const yearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
+      const limit = 100;
 
-      const dateChecks = Array.from({ length: daysInMonth }, async(_, index) => {
-        const day = index + 1;
-        const date = formatDate(year, month, day, separator);
-        const pagePath = resolvedBasePath === '' ? `/${date}` : `${resolvedBasePath}/${date}`;
+      const res = await fetch(
+        `/_api/v3/pages/list?path=${encodeURIComponent(resolvedBasePath)}&limit=${limit}&page=1`,
+      );
 
-        const exists = await existsPage(pagePath);
+      if (!res.ok) {
+        console.warn('[calendar] failed to fetch pages list:', res.status);
+        return [];
+      }
 
-        return {
-          date,
-          exists,
-        };
-      });
+      const json = await res.json();
+      const pages = json.pages ?? [];
 
-      const results = await Promise.all(dateChecks);
-      const existingDates = results
-        .filter((result) => result.exists)
-        .map((result) => result.date);
+      const existingDates = pages
+        .map((page: { path?: string }) => page.path?.split('/').pop())
+        .filter((date: string | undefined): date is string => {
+          if (date == null) return false;
+          return new RegExp(`^${yearMonth}-\\d{2}$`).test(date);
+        });
 
       console.log('[calendar] existing dates:', existingDates);
 
