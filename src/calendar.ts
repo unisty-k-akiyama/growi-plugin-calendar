@@ -56,9 +56,27 @@ export const plugin: Plugin = function() {
               const targetYear = isNaN(year as unknown as number) ? new Date().getFullYear() : parseInt(year);
 
               void logTargetPagePaths(basePath, targetYear, targetMonth, separator);
-              void getExistingDates(basePath, targetYear, targetMonth, separator).then((existingDates) => {
-                injectStyle();
-                highlightExistingDates(calendarId, existingDates);
+              void refreshExistingDateHighlights(calendarId, basePath, targetYear, targetMonth, separator);
+
+              let lastCheckedYear = targetYear;
+              let lastCheckedMonth = targetMonth;
+
+              calendarElement.addEventListener('click', () => {
+                setTimeout(() => {
+                  const monthButton = calendarElement.querySelector('[data-calendar-selected-month]');
+                  const yearButton = calendarElement.querySelector('[data-calendar-selected-year]');
+
+                  const selectedMonth = Number(monthButton?.getAttribute('data-calendar-selected-month'));
+                  const selectedYear = Number(yearButton?.getAttribute('data-calendar-selected-year'));
+
+                  if (Number.isNaN(selectedMonth) || Number.isNaN(selectedYear)) return;
+                  if (selectedYear === lastCheckedYear && selectedMonth === lastCheckedMonth) return;
+
+                  lastCheckedYear = selectedYear;
+                  lastCheckedMonth = selectedMonth;
+
+                  void refreshExistingDateHighlights(calendarId, basePath, selectedYear, selectedMonth, separator);
+                }, 100);
               });
 
               clearInterval(id);
@@ -169,12 +187,31 @@ export const plugin: Plugin = function() {
       if (calendarElement == null) return;
 
       existingDates.forEach((date) => {
-        const day = parseInt(date.split('-')[2], 10);
         const targetButton = calendarElement.querySelector(
           `[data-calendar-day="${date}"]`
         );
         targetButton?.classList.add('growi-calendar-existing-page');
       });
+    };
+
+    const refreshExistingDateHighlights = async(
+      calendarId: string,
+      basePath: string,
+      year: number,
+      month: number,
+      separator: string,
+    ) => {
+      const calendarElement = document.querySelector(`#${calendarId}`);
+      if (calendarElement == null) return;
+
+      calendarElement
+        .querySelectorAll('.growi-calendar-existing-page')
+        .forEach((el) => el.classList.remove('growi-calendar-existing-page'));
+
+      const existingDates = await getExistingDates(basePath, year, month, separator);
+
+      injectStyle();
+      highlightExistingDates(calendarId, existingDates);
     };
   };
 };
