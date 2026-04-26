@@ -205,17 +205,20 @@ export const plugin: Plugin = function() {
     };
 
     const fetchPagesByBasePath = async(basePath: string) => {
-      const cached = pagesCache.get(basePath);
+      const resolvedBasePath = await resolveBasePath(basePath);
+
+      const cached = pagesCache.get(resolvedBasePath);
       if (cached != null) {
         return cached;
       }
+
       const limit = 100;
       let page = 1;
       const allPages: { path?: string }[] = [];
 
       while (true) {
         const res = await fetch(
-          `/_api/v3/pages/list?path=${encodeURIComponent(basePath)}&limit=${limit}&page=${page}`,
+          `/_api/v3/pages/list?path=${encodeURIComponent(resolvedBasePath)}&limit=${limit}&page=${page}`,
         );
 
         if (!res.ok) {
@@ -235,7 +238,7 @@ export const plugin: Plugin = function() {
         page += 1;
       }
 
-      pagesCache.set(basePath, allPages);
+      pagesCache.set(resolvedBasePath, allPages);
       return allPages;
     };
 
