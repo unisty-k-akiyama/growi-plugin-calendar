@@ -146,17 +146,23 @@ export const plugin: Plugin = function() {
       const resolvedBasePath = await resolveBasePath(basePath);
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      const existingDates: string[] = [];
-
-      for (let day = 1; day <= daysInMonth; day += 1) {
+      const dateChecks = Array.from({ length: daysInMonth }, async(_, index) => {
+        const day = index + 1;
         const date = formatDate(year, month, day, separator);
         const pagePath = resolvedBasePath === '' ? `/${date}` : `${resolvedBasePath}/${date}`;
 
         const exists = await existsPage(pagePath);
-        if (exists) {
-          existingDates.push(date);
-        }
-      }
+
+        return {
+          date,
+          exists,
+        };
+      });
+
+      const results = await Promise.all(dateChecks);
+      const existingDates = results
+        .filter((result) => result.exists)
+        .map((result) => result.date);
 
       console.log('[calendar] existing dates:', existingDates);
 
