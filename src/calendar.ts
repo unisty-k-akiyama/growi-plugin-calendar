@@ -12,7 +12,6 @@ interface GrowiNode extends Node {
 }
 
 export const plugin: Plugin = function() {
-  console.log('[calendar-plugin] plugin loaded');
 
   return (tree) => {
     const existingDatesCache = new Map<string, string[]>();
@@ -30,7 +29,7 @@ export const plugin: Plugin = function() {
     };
     visit(tree, (node) => {
       const n = node as unknown as GrowiNode;
-      console.log('[calendar-plugin] node:', n.type, n.name, n.value);
+
       try {
         if (n.type === 'leafGrowiPluginDirective' && n.name === 'calendar') {
           const [month, year] = Object.keys(n.attributes);
@@ -99,8 +98,6 @@ export const plugin: Plugin = function() {
         }
 
         if (n.type === 'leafGrowiPluginDirective' && n.name === 'calendar_viewer') {
-          console.log('[calendar_viewer] attributes:', n.attributes);
-          console.log('[calendar_viewer] attribute keys:', Object.keys(n.attributes));
 
           const keys = Object.keys(n.attributes);
 
@@ -123,43 +120,6 @@ export const plugin: Plugin = function() {
             clearInterval(id);
             void renderCalendarViewer(viewerId, basePath, limit);
           }, 100);
-        }
-        if (n.type === 'text' && typeof n.value === 'string') {
-          console.log('[calendar_viewer] text node:', n.value);
-
-          const regex = /\$calendar_viewer\((.*?)\)/g;
-          let match;
-          const parts: string[] = [];
-          let lastIndex = 0;
-
-          while ((match = regex.exec(n.value)) !== null) {
-            console.log('[calendar_viewer] matched:', match[0], match[1]);
-            const before = n.value.slice(lastIndex, match.index);
-            if (before) parts.push(before);
-
-            const { basePath, limit } = parseCalendarViewerArgs(match[1]);
-            const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
-
-            parts.push(`<div id="${viewerId}">読み込み中...</div>`);
-
-            const id = setInterval(() => {
-              const el = document.querySelector(`#${viewerId}`);
-              if (el == null) return;
-
-              clearInterval(id);
-              void renderCalendarViewer(viewerId, basePath, limit);
-            }, 100);
-
-            lastIndex = regex.lastIndex;
-          }
-
-          const after = n.value.slice(lastIndex);
-          if (after) parts.push(after);
-
-          if (lastIndex > 0) {
-            n.type = 'html';
-            n.value = parts.join('');
-          }
         }
       }
       catch (e) {
@@ -240,10 +200,6 @@ export const plugin: Plugin = function() {
     const fetchPagesByBasePath = async(basePath: string) => {
       const resolvedBasePath = await resolveBasePath(basePath);
 
-      console.log('[calendar_viewer] input basePath:', basePath);
-      console.log('[calendar_viewer] resolvedBasePath:', resolvedBasePath);
-      console.log('[calendar_viewer] api:', `/_api/v3/pages/list?path=${encodeURIComponent(resolvedBasePath)}`);
-
       const cached = pagesCache.get(resolvedBasePath);
       if (cached != null) {
         return cached;
@@ -265,9 +221,6 @@ export const plugin: Plugin = function() {
 
         const json = await res.json();
         const pages = json.pages ?? [];
-
-        console.log('[calendar_viewer] totalCount:', json.totalCount);
-        console.log('[calendar_viewer] pages:', pages);
 
         allPages.push(...pages);
 
