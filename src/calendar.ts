@@ -18,11 +18,14 @@ export const plugin: Plugin = function() {
     const existingDatesCache = new Map<string, string[]>();
     const pagesCache = new Map<string, { path?: string }[]>();
     const parseCalendarViewerArgs = (argsText: string) => {
-      const args = argsText.split(',').map((arg) => arg.trim());
+      const args = argsText.split(',').map((arg) => arg.trim()).filter((arg) => arg !== '');
+
+      const limitArg = args.find((arg) => !Number.isNaN(Number(arg)));
+      const basePathArg = args.find((arg) => Number.isNaN(Number(arg)));
 
       return {
-        basePath: args[0] == null || args[0] === '' ? '.' : args[0],
-        limit: Number.isNaN(Number(args[1])) ? 5 : Number(args[1]),
+        basePath: basePathArg == null || basePathArg === '' ? '.' : basePathArg,
+        limit: limitArg == null ? 5 : Number(limitArg),
       };
     };
     visit(tree, (node) => {
