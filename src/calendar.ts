@@ -53,7 +53,7 @@ export const plugin: Plugin = function() {
               const targetYear = isNaN(year as unknown as number) ? new Date().getFullYear() : parseInt(year);
 
               void logTargetPagePaths(basePath, targetYear, targetMonth, separator);
-              void logOnePageExists(basePath, targetYear, targetMonth, separator);
+              void getExistingDates(basePath, targetYear, targetMonth, separator);
 
               clearInterval(id);
             }
@@ -114,16 +114,30 @@ export const plugin: Plugin = function() {
       return json.page != null;
     };
 
-    const logOnePageExists = async(basePath: string, year: number, month: number, separator: string) => {
+    const getExistingDates = async(
+      basePath: string,
+      year: number,
+      month: number,
+      separator: string,
+    ) => {
       const resolvedBasePath = await resolveBasePath(basePath);
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      // まずは1日だけ確認
-      const day = 1;
-      const date = formatDate(year, month, day, separator);
-      const pagePath = resolvedBasePath === '' ? `/${date}` : `${resolvedBasePath}/${date}`;
+      const existingDates: string[] = [];
 
-      const exists = await existsPage(pagePath);
-      console.log(`[calendar] exists page: ${pagePath} => ${exists}`);
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const date = formatDate(year, month, day, separator);
+        const pagePath = resolvedBasePath === '' ? `/${date}` : `${resolvedBasePath}/${date}`;
+
+        const exists = await existsPage(pagePath);
+        if (exists) {
+          existingDates.push(date);
+        }
+      }
+
+      console.log('[calendar] existing dates:', existingDates);
+
+      return existingDates;
     };
   };
 };
