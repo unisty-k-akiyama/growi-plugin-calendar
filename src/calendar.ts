@@ -13,6 +13,8 @@ interface GrowiNode extends Node {
 
 export const plugin: Plugin = function() {
   return (tree) => {
+    const existingDatesCache = new Map<string, string[]>();
+    const pagesCache = new Map<string, { path?: string }[]>();
     visit(tree, (node) => {
       const n = node as unknown as GrowiNode;
       try {
@@ -22,10 +24,10 @@ export const plugin: Plugin = function() {
           const separator = n.attributes.separator || '/';
           const basePath = n.attributes.basePath || '.';
           const calendarId = `calendar-${Math.random().toString(36).slice(2)}`;
-          console.log('basePath=' + basePath);
+
           n.type = 'html';
           n.value = `<div id="${calendarId}"></div>`;
-          console.log(month, year, lang);
+
           let clicked = false;
           const id = setInterval(() => {
             const calendarElement = document.querySelector(`#${calendarId}`);
@@ -44,7 +46,7 @@ export const plugin: Plugin = function() {
                   async clickDay(event, self) {
                     if (clicked) return;
                     clicked = true;
-                    const page = self.selectedDates[0].replaceAll(/-/g, separator);
+                    const page = self.selectedDates[0];
                     const resolvedBasePath = await resolveBasePath(basePath);
                     location.href = resolvedBasePath === '' ? `/${page}` : `${resolvedBasePath}/${page}`;
                   },
@@ -55,7 +57,6 @@ export const plugin: Plugin = function() {
               const targetMonth = isNaN(month as unknown as number) ? new Date().getMonth() : parseInt(month) - 1;
               const targetYear = isNaN(year as unknown as number) ? new Date().getFullYear() : parseInt(year);
 
-              void logTargetPagePaths(basePath, targetYear, targetMonth, separator);
               void refreshExistingDateHighlights(calendarId, basePath, targetYear, targetMonth, separator);
 
               let lastCheckedYear = targetYear;
@@ -115,17 +116,6 @@ export const plugin: Plugin = function() {
       ].join(separator);
     };
 
-    const logTargetPagePaths = async(basePath: string, year: number, month: number, separator: string) => {
-      const resolvedBasePath = await resolveBasePath(basePath);
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-      for (let day = 1; day <= daysInMonth; day += 1) {
-        const date = formatDate(year, month, day, separator);
-        const pagePath = resolvedBasePath === '' ? `/${date}` : `${resolvedBasePath}/${date}`;
-        console.log(`[calendar] target page path: ${pagePath}`);
-      }
-    };
-
     const getExistingDates = async(
       basePath: string,
       year: number,
@@ -134,30 +124,60 @@ export const plugin: Plugin = function() {
     ) => {
       const resolvedBasePath = await resolveBasePath(basePath);
       const yearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
-      const limit = 100;
+      const cacheKey = `${resolvedBasePath}:${yearMonth}`;
 
-      const res = await fetch(
-        `/_api/v3/pages/list?path=${encodeURIComponent(resolvedBasePath)}&limit=${limit}&page=1`,
-      );
-
-      if (!res.ok) {
-        console.warn('[calendar] failed to fetch pages list:', res.status);
-        return [];
+      const cached = existingDatesCache.get(cacheKey);
+      if (cached != null) {
+        return cached;
       }
 
-      const json = await res.json();
-      const pages = json.pages ?? [];
+      const pages = await fetchPagesByBasePath(resolvedBasePath);
 
       const existingDates = pages
-        .map((page: { path?: string }) => page.path?.split('/').pop())
+        .map((page) => page.path?.split('/').pop())
         .filter((date: string | undefined): date is string => {
           if (date == null) return false;
           return new RegExp(`^${yearMonth}-\\d{2}$`).test(date);
         });
 
-      console.log('[calendar] existing dates:', existingDates);
+      existingDatesCache.set(cacheKey, existingDates);
 
       return existingDates;
+    };
+
+    const fetchPagesByBasePath = async(basePath: string) => {
+      const cached = pagesCache.get(basePath);
+      if (cached != null) {
+        return cached;
+      }
+      const limit = 100;
+      let page = 1;
+      const allPages: { path?: string }[] = [];
+
+      while (true) {
+        const res = await fetch(
+          `/_api/v3/pages/list?path=${encodeURIComponent(basePath)}&limit=${limit}&page=${page}`,
+        );
+
+        if (!res.ok) {
+          console.warn('[calendar] failed to fetch pages list:', res.status);
+          return allPages;
+        }
+
+        const json = await res.json();
+        const pages = json.pages ?? [];
+
+        allPages.push(...pages);
+
+        if (allPages.length >= json.totalCount || pages.length === 0) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      pagesCache.set(basePath, allPages);
+      return allPages;
     };
 
     const injectStyle = () => {
