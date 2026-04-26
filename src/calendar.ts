@@ -104,18 +104,12 @@ export const plugin: Plugin = function() {
 
           const keys = Object.keys(n.attributes);
 
-          let basePath = '.';
-          let limit = 5;
+          const numericKeys = keys.filter((key) => Number.isInteger(Number(key)) && Number(key) > 0);
+          const pathKeys = keys.filter((key) => !(Number.isInteger(Number(key)) && Number(key) > 0));
 
-          keys.forEach((key) => {
-            const numericKey = Number(key);
+          const limit = numericKeys.length > 0 ? Number(numericKeys[0]) : 5;
+          const basePath = pathKeys.length > 0 ? pathKeys[0] : '.';
 
-            if (Number.isInteger(numericKey) && numericKey > 0) {
-              limit = numericKey;
-            } else {
-              basePath = key;
-            }
-          });
           const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
 
           n.type = 'html';
