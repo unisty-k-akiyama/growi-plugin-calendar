@@ -12,6 +12,8 @@ interface GrowiNode extends Node {
 }
 
 export const plugin: Plugin = function() {
+  console.log('[calendar-plugin] plugin loaded');
+
   return (tree) => {
     const existingDatesCache = new Map<string, string[]>();
     const pagesCache = new Map<string, { path?: string }[]>();
@@ -25,6 +27,7 @@ export const plugin: Plugin = function() {
     };
     visit(tree, (node) => {
       const n = node as unknown as GrowiNode;
+      console.log('[calendar-plugin] node:', n.type, n.name, n.value);
       try {
         if (n.type === 'leafGrowiPluginDirective' && n.name === 'calendar') {
           const [month, year] = Object.keys(n.attributes);
@@ -109,12 +112,15 @@ export const plugin: Plugin = function() {
           }, 100);
         }
         if (n.type === 'text' && typeof n.value === 'string') {
+          console.log('[calendar_viewer] text node:', n.value);
+
           const regex = /\$calendar_viewer\((.*?)\)/g;
           let match;
           const parts: string[] = [];
           let lastIndex = 0;
 
           while ((match = regex.exec(n.value)) !== null) {
+            console.log('[calendar_viewer] matched:', match[0], match[1]);
             const before = n.value.slice(lastIndex, match.index);
             if (before) parts.push(before);
 
