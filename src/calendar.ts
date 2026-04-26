@@ -41,9 +41,6 @@ export const plugin: Plugin = function() {
                   async clickDay(event, self) {
                     if (clicked) return;
                     clicked = true;
-                    // const page = self.selectedDates[0].replaceAll(/-/g, separator);
-                    // const path = await getPagePath();
-                    // location.href = `${path}${page}`;
                     const page = self.selectedDates[0].replaceAll(/-/g, separator);
                     const resolvedBasePath = await resolveBasePath(basePath);
                     location.href = resolvedBasePath === '' ? `/${page}` : `${resolvedBasePath}/${page}`;
@@ -56,6 +53,7 @@ export const plugin: Plugin = function() {
               const targetYear = isNaN(year as unknown as number) ? new Date().getFullYear() : parseInt(year);
 
               void logTargetPagePaths(basePath, targetYear, targetMonth, separator);
+              void logOnePageExists(basePath, targetYear, targetMonth, separator);
 
               clearInterval(id);
             }
@@ -68,14 +66,6 @@ export const plugin: Plugin = function() {
       }
     });
 
-    // const getPagePath = async() => {
-    //   if (location.pathname === '/') return '/';
-    //   const pageId = location.pathname.replace(/\//, '');
-    //   const res = await fetch(`/_api/v3/page?pageId=${pageId}`);
-    //   const json = await res.json();
-    //   const { path } = json.page;
-    //   return `${path}/`;
-    // };
     const getCurrentPagePath = async() => {
       if (location.pathname === '/') return '';
 
@@ -111,6 +101,29 @@ export const plugin: Plugin = function() {
         const pagePath = resolvedBasePath === '' ? `/${date}` : `${resolvedBasePath}/${date}`;
         console.log(`[calendar] target page path: ${pagePath}`);
       }
+    };
+
+    const existsPage = async(path: string) => {
+      const res = await fetch(`/_api/v3/page?path=${encodeURIComponent(path)}`);
+
+      if (!res.ok) {
+        return false;
+      }
+
+      const json = await res.json();
+      return json.page != null;
+    };
+
+    const logOnePageExists = async(basePath: string, year: number, month: number, separator: string) => {
+      const resolvedBasePath = await resolveBasePath(basePath);
+
+      // まずは1日だけ確認
+      const day = 1;
+      const date = formatDate(year, month, day, separator);
+      const pagePath = resolvedBasePath === '' ? `/${date}` : `${resolvedBasePath}/${date}`;
+
+      const exists = await existsPage(pagePath);
+      console.log(`[calendar] exists page: ${pagePath} => ${exists}`);
     };
   };
 };
