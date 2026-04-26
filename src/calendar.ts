@@ -83,6 +83,17 @@ export const plugin: Plugin = function() {
             }
           }, 100);
         }
+
+        if (n.type === 'leafGrowiPluginDirective' && n.name === 'calendar_viewer') {
+          const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
+
+          n.type = 'html';
+          n.value = `
+            <div id="${viewerId}" class="growi-calendar-viewer">
+              calendar_viewer 読み込みテスト
+            </div>
+          `;
+        }
       }
       catch (e) {
         n.type = 'html';
