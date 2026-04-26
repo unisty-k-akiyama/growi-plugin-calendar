@@ -96,6 +96,9 @@ export const plugin: Plugin = function() {
         }
 
         if (n.type === 'leafGrowiPluginDirective' && n.name === 'calendar_viewer') {
+          console.log('[calendar_viewer] attributes:', n.attributes);
+          console.log('[calendar_viewer] attribute keys:', Object.keys(n.attributes));
+
           const { basePath, limit } = parseCalendarViewerArgs(Object.keys(n.attributes).join(','));
           const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
 
@@ -157,6 +160,20 @@ export const plugin: Plugin = function() {
 
     const getCurrentPagePath = async() => {
       if (location.pathname === '/') return '';
+
+      const pageId = location.pathname.replace(/^\//, '').replace(/\/$/, '');
+
+      try {
+        const res = await fetch(`/_api/v3/page?pageId=${pageId}`);
+        const json = await res.json();
+
+        if (json.page?.path != null) {
+          return json.page.path as string;
+        }
+      }
+      catch (e) {
+        console.warn('[calendar] failed to resolve current page path:', e);
+      }
 
       return decodeURIComponent(location.pathname).replace(/\/$/, '');
     };
