@@ -21,14 +21,15 @@ export const plugin: Plugin = function() {
           const lang = n.attributes.lang || 'en';
           const separator = n.attributes.separator || '/';
           const basePath = n.attributes.basePath || '.';
+          const calendarId = `calendar-${Math.random().toString(36).slice(2)}`;
           console.log('basePath=' + basePath);
           n.type = 'html';
-          n.value = '<div id="calendar"></div>';
+          n.value = `<div id="${calendarId}"></div>`;
           console.log(month, year, lang);
           let clicked = false;
           const id = setInterval(() => {
-            if (document.querySelector('#calendar') != null) {
-              const cal = new VanillaCalendar('#calendar', {
+            if (document.querySelector(`#${calendarId}`) != null) {
+              const cal = new VanillaCalendar(`#${calendarId}`, {
                 settings: {
                   lang,
                   selected: {
