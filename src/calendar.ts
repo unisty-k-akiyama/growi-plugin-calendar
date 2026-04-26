@@ -102,7 +102,20 @@ export const plugin: Plugin = function() {
           console.log('[calendar_viewer] attributes:', n.attributes);
           console.log('[calendar_viewer] attribute keys:', Object.keys(n.attributes));
 
-          const { basePath, limit } = parseCalendarViewerArgs(Object.keys(n.attributes).join(','));
+          const keys = Object.keys(n.attributes);
+
+          let basePath = '.';
+          let limit = 5;
+
+          keys.forEach((key) => {
+            const numericKey = Number(key);
+
+            if (Number.isInteger(numericKey) && numericKey > 0) {
+              limit = numericKey;
+            } else {
+              basePath = key;
+            }
+          });
           const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
 
           n.type = 'html';
