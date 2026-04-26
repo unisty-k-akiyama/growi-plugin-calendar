@@ -28,7 +28,10 @@ export const plugin: Plugin = function() {
           console.log(month, year, lang);
           let clicked = false;
           const id = setInterval(() => {
-            if (document.querySelector(`#${calendarId}`) != null) {
+            const calendarElement = document.querySelector(`#${calendarId}`);
+
+            if (calendarElement != null && calendarElement.getAttribute('data-initialized') !== 'true') {
+              calendarElement.setAttribute('data-initialized', 'true');
               const cal = new VanillaCalendar(`#${calendarId}`, {
                 settings: {
                   lang,
@@ -53,7 +56,10 @@ export const plugin: Plugin = function() {
               const targetYear = isNaN(year as unknown as number) ? new Date().getFullYear() : parseInt(year);
 
               void logTargetPagePaths(basePath, targetYear, targetMonth, separator);
-              void getExistingDates(basePath, targetYear, targetMonth, separator);
+              void getExistingDates(basePath, targetYear, targetMonth, separator).then((existingDates) => {
+                injectStyle();
+                highlightExistingDates(calendarId, existingDates);
+              });
 
               clearInterval(id);
             }
@@ -138,6 +144,37 @@ export const plugin: Plugin = function() {
       console.log('[calendar] existing dates:', existingDates);
 
       return existingDates;
+    };
+
+    const injectStyle = () => {
+      if (document.querySelector('#growi-calendar-plugin-style') != null) return;
+
+      const style = document.createElement('style');
+      style.id = 'growi-calendar-plugin-style';
+      style.textContent = `
+        .growi-calendar-existing-page {
+          background-color: #cfe8ff !important;
+          border-radius: 6px;
+          font-weight: bold;
+        }
+      `;
+      document.head.appendChild(style);
+    };
+
+    const highlightExistingDates = (
+      calendarId: string,
+      existingDates: string[],
+    ) => {
+      const calendarElement = document.querySelector(`#${calendarId}`);
+      if (calendarElement == null) return;
+
+      existingDates.forEach((date) => {
+        const day = parseInt(date.split('-')[2], 10);
+        const targetButton = calendarElement.querySelector(
+          `[data-calendar-day="${date}"]`
+        );
+        targetButton?.classList.add('growi-calendar-existing-page');
+      });
     };
   };
 };
