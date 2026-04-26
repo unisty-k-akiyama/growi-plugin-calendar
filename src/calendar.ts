@@ -207,6 +207,10 @@ export const plugin: Plugin = function() {
     const fetchPagesByBasePath = async(basePath: string) => {
       const resolvedBasePath = await resolveBasePath(basePath);
 
+      console.log('[calendar_viewer] input basePath:', basePath);
+      console.log('[calendar_viewer] resolvedBasePath:', resolvedBasePath);
+      console.log('[calendar_viewer] api:', `/_api/v3/pages/list?path=${encodeURIComponent(resolvedBasePath)}`);
+
       const cached = pagesCache.get(resolvedBasePath);
       if (cached != null) {
         return cached;
@@ -228,6 +232,9 @@ export const plugin: Plugin = function() {
 
         const json = await res.json();
         const pages = json.pages ?? [];
+
+        console.log('[calendar_viewer] totalCount:', json.totalCount);
+        console.log('[calendar_viewer] pages:', pages);
 
         allPages.push(...pages);
 
