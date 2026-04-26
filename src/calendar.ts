@@ -15,6 +15,14 @@ export const plugin: Plugin = function() {
   return (tree) => {
     const existingDatesCache = new Map<string, string[]>();
     const pagesCache = new Map<string, { path?: string }[]>();
+    const parseCalendarViewerArgs = (argsText: string) => {
+      const args = argsText.split(',').map((arg) => arg.trim());
+
+      return {
+        basePath: args[0] == null || args[0] === '' ? '.' : args[0],
+        limit: Number.isNaN(Number(args[1])) ? 5 : Number(args[1]),
+      };
+    };
     visit(tree, (node) => {
       const n = node as unknown as GrowiNode;
       try {
@@ -85,9 +93,7 @@ export const plugin: Plugin = function() {
         }
 
         if (n.type === 'leafGrowiPluginDirective' && n.name === 'calendar_viewer') {
-          const [basePathArg, limitArg] = Object.keys(n.attributes);
-          const basePath = basePathArg || '.';
-          const limit = Number(limitArg || 5);
+          const { basePath, limit } = parseCalendarViewerArgs(Object.keys(n.attributes).join(','));
           const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
 
           n.type = 'html';
@@ -112,10 +118,7 @@ export const plugin: Plugin = function() {
             const before = n.value.slice(lastIndex, match.index);
             if (before) parts.push(before);
 
-            const args = match[1].split(',');
-            const basePath = (args[0] || '.').trim();
-            const limit = Number((args[1] || '5').trim());
-
+            const { basePath, limit } = parseCalendarViewerArgs(match[1]);
             const viewerId = `calendar-viewer-${Math.random().toString(36).slice(2)}`;
 
             parts.push(`<div id="${viewerId}">読み込み中...</div>`);
@@ -149,11 +152,7 @@ export const plugin: Plugin = function() {
     const getCurrentPagePath = async() => {
       if (location.pathname === '/') return '';
 
-      const pageId = location.pathname.replace(/\//, '');
-      const res = await fetch(`/_api/v3/page?pageId=${pageId}`);
-      const json = await res.json();
-
-      return json.page.path as string;
+      return decodeURIComponent(location.pathname).replace(/\/$/, '');
     };
 
     const resolveBasePath = async(basePath: string) => {
@@ -161,7 +160,11 @@ export const plugin: Plugin = function() {
         return getCurrentPagePath();
       }
 
-      return basePath.replace(/\/$/, '');
+      const normalizedBasePath = basePath.trim().replace(/\/$/, '');
+
+      return normalizedBasePath.startsWith('/')
+        ? normalizedBasePath
+        : `/${normalizedBasePath}`;
     };
 
     const formatDate = (year: number, month: number, day: number, separator: string) => {
