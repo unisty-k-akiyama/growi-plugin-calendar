@@ -1,5 +1,3 @@
-import { getPackedSettings } from 'http2';
-
 import type { Plugin } from 'unified';
 import { visit } from 'unist-util-visit';
 import VanillaCalendar from 'vanilla-calendar-pro';

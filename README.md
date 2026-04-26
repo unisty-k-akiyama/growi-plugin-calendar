@@ -1,4 +1,4 @@
-# GROIW Calendar Plugin
+# GROWI Calendar Plugin
 
 This is a calendar plugin for GROWI. It shows a calendar view.
 
@@ -41,3 +41,7 @@ $calendar(separator=-)
 
 MIT
 
+## Notes
+
+This repository is forked for internal GROWI operation.
+The original source is licensed under the MIT License.

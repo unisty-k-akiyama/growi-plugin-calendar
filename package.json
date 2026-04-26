@@ -1,11 +1,12 @@
 {
-  "name": "growi-plugin-remark-youtube",
-  "version": "1.0.0",
-  "description": "GROWI plugin template for script",
+  "name": "growi-plugin-calendar",
+  "version": "1.0.1",
+  "description": "GROWI plugin for embedding calendar",
   "license": "MIT",
   "keywords": [
     "growi",
-    "growi-plugin"
+    "growi-plugin",
+    "calendar"
   ],
   "type": "module",
   "scripts": {
