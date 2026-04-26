@@ -70,7 +70,6 @@ export const plugin: Plugin = function() {
                   const selectedYear = Number(yearButton?.getAttribute('data-calendar-selected-year'));
 
                   if (Number.isNaN(selectedMonth) || Number.isNaN(selectedYear)) return;
-                  if (selectedYear === lastCheckedYear && selectedMonth === lastCheckedMonth) return;
 
                   lastCheckedYear = selectedYear;
                   lastCheckedMonth = selectedMonth;
