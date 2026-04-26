@@ -50,6 +50,12 @@ export const plugin: Plugin = function() {
                 },
               });
               cal.init();
+
+              const targetMonth = isNaN(month as unknown as number) ? new Date().getMonth() : parseInt(month) - 1;
+              const targetYear = isNaN(year as unknown as number) ? new Date().getFullYear() : parseInt(year);
+
+              void logTargetPagePaths(basePath, targetYear, targetMonth, separator);
+
               clearInterval(id);
             }
           }, 100);
@@ -85,6 +91,25 @@ export const plugin: Plugin = function() {
       }
 
       return basePath.replace(/\/$/, '');
+    };
+
+    const formatDate = (year: number, month: number, day: number, separator: string) => {
+      return [
+        year,
+        String(month + 1).padStart(2, '0'),
+        String(day).padStart(2, '0'),
+      ].join(separator);
+    };
+
+    const logTargetPagePaths = async(basePath: string, year: number, month: number, separator: string) => {
+      const resolvedBasePath = await resolveBasePath(basePath);
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const date = formatDate(year, month, day, separator);
+        const pagePath = resolvedBasePath === '' ? `/${date}` : `${resolvedBasePath}/${date}`;
+        console.log(`[calendar] target page path: ${pagePath}`);
+      }
     };
   };
 };
