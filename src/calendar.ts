@@ -156,7 +156,8 @@ export const plugin: Plugin = function() {
           const pagePath = page.path ?? '';
           const content = await fetchPageContent(pagePath);
           const normalizedContent = normalizeRelativeLinks(content, pagePath);
-          const htmlContent = marked.parse(normalizedContent, { breaks: true }) as string;
+          const parsedContent = marked.parse(normalizedContent, { breaks: true }) as string;
+          const htmlContent = wrapImagesWithButton(parsedContent);
 
           return `
             <div class="growi-calendar-viewer-item">
@@ -193,6 +194,25 @@ export const plugin: Plugin = function() {
       );
     };
 
+    const wrapImagesWithButton = (html: string) => {
+      const container = document.createElement('div');
+      container.innerHTML = html;
+
+      container.querySelectorAll('img').forEach((img) => {
+        if (img.parentElement?.tagName.toLowerCase() === 'button') return;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'border-0 bg-transparent p-0';
+        button.setAttribute('aria-label', img.getAttribute('alt') ?? '');
+
+        img.parentNode?.insertBefore(button, img);
+        button.appendChild(img);
+      });
+
+      return container.innerHTML;
+    };
+
     const injectStyle = () => {
       if (document.querySelector('#growi-calendar-plugin-style') != null) return;
 
@@ -221,7 +241,7 @@ export const plugin: Plugin = function() {
           background-color: transparent !important;
           margin-top: 16px !important;
           margin-bottom: 8px !important;
-          font-size: 2.5rem !important;
+          font-size: 2.0rem !important;
           font-weight: bold !important;
           line-height: 1.2 !important;
         }
@@ -229,7 +249,6 @@ export const plugin: Plugin = function() {
         .wiki .growi-calendar-viewer-date a,
         .markdown-body .growi-calendar-viewer-date a {
           color: #1a0dab !important;
-          text-decoration: underline !important;
         }
         .growi-calendar-viewer-content img {
           max-width: 100%;
