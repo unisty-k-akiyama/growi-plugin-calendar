@@ -2,6 +2,7 @@ import type { Plugin } from 'unified';
 import { visit } from 'unist-util-visit';
 import VanillaCalendar from 'vanilla-calendar-pro';
 import 'vanilla-calendar-pro/build/vanilla-calendar.min.css';
+import { marked } from 'marked';
 
 interface GrowiNode extends Node {
   name: string;
@@ -169,10 +170,10 @@ export const plugin: Plugin = function() {
     };
 
     const getExistingDates = async(
-      basePath: string,
-      year: number,
-      month: number,
-      separator: string,
+        basePath: string,
+        year: number,
+        month: number,
+        separator: string,
     ) => {
       const resolvedBasePath = await resolveBasePath(basePath);
       const yearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -255,9 +256,9 @@ export const plugin: Plugin = function() {
     };
 
     const renderCalendarViewer = async(
-      viewerId: string,
-      basePath: string,
-      limit: number,
+        viewerId: string,
+        basePath: string,
+        limit: number,
     ) => {
       const viewerElement = document.querySelector(`#${viewerId}`);
       if (viewerElement == null) return;
@@ -273,11 +274,16 @@ export const plugin: Plugin = function() {
         pages.map(async(page) => {
           const date = page.path?.split('/').pop() ?? '';
           const content = await fetchPageContent(page.path ?? '');
+          const htmlContent = marked.parse(content) as string;
 
           return `
             <div class="growi-calendar-viewer-item">
-              <div><strong>${date}</strong></div>
-              <div class="growi-calendar-viewer-content">${content}</div>
+              <div class="growi-calendar-viewer-date">
+                <strong>${date}</strong>
+              </div>
+              <div class="growi-calendar-viewer-content markdown-body">
+                ${htmlContent}
+              </div>
             </div>
           `;
         }),
@@ -303,13 +309,26 @@ export const plugin: Plugin = function() {
           text-decoration: underline;
           text-underline-offset: 3px;
         }
+        .growi-calendar-viewer-item {
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #ddd;
+        }
+        .growi-calendar-viewer-date {
+          font-weight: bold;
+          margin-bottom: 8px;
+        }
+        .growi-calendar-viewer-content img {
+          max-width: 100%;
+          height: auto;
+        }
       `;
       document.head.appendChild(style);
     };
 
     const highlightExistingDates = (
-      calendarId: string,
-      existingDates: string[],
+        calendarId: string,
+        existingDates: string[],
     ) => {
       const calendarElement = document.querySelector(`#${calendarId}`);
       if (calendarElement == null) return;
@@ -327,11 +346,11 @@ export const plugin: Plugin = function() {
     };
 
     const refreshExistingDateHighlights = async(
-      calendarId: string,
-      basePath: string,
-      year: number,
-      month: number,
-      separator: string,
+        calendarId: string,
+        basePath: string,
+        year: number,
+        month: number,
+        separator: string,
     ) => {
       const calendarElement = document.querySelector(`#${calendarId}`);
       if (calendarElement == null) return;
