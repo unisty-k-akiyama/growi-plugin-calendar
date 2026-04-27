@@ -1,47 +1,129 @@
 # GROWI Calendar Plugin
 
-This is a calendar plugin for GROWI. It shows a calendar view.
+Calendar plugin for GROWI.
+
+This plugin provides a calendar view and a page viewer for date-based pages.
+
+---
+
+## Features
+
+- `$calendar(...)`  
+  Displays a calendar and highlights dates that have corresponding pages.
+- `$calendar_viewer(...)`  
+  Displays recent date pages and their content (similar to PukiWiki `calendar_viewer`).
+
+---
 
 ## Install
 
-Install a plugin in admin panel.
+Install this plugin from the GROWI admin plugin page.
+
+---
 
 ## Usage
 
+### Calendar
+
 ```
-$calendar
+$calendar()
 ```
 
-When you click each day, the plugin jumps to the page of the day. `YYYY/MM/DD` is default page name.
+Clicking a date navigates to the corresponding page.
 
-## Options
+Default page format:
 
-If you want to chage calendar year and month, you can use options.
+```
+YYYY/MM/DD
+```
+
+---
+
+### Calendar Options
+
+#### Specify month and year
 
 ```
 $calendar(10,2020)
 ```
 
-You can change a locale like 'ja', 'fr'. Default is 'en'.
+#### Specify locale
 
 ```
 $calendar(locale=ja)
 $calendar(10,2020,locale=ja)
 ```
 
-If you want to change a new page name, you can use 'separator' option. Default is '/'. 
+#### Specify date separator
 
 ```
-$calendar(10,2020,locale=ja,separator=-)
-$calendar(local=fr,separator=-)
 $calendar(separator=-)
+$calendar(10,2020,locale=ja,separator=-)
 ```
+
+#### Specify base path
+
+```
+$calendar(basePath=/parent/page)
+```
+
+---
+
+## Calendar Viewer
+
+Displays recent date pages and their content.
+
+### Default (latest 5 pages under current path)
+
+```
+$calendar_viewer()
+```
+
+### Specify number of pages
+
+```
+$calendar_viewer(5)
+```
+
+### Specify base path and limit
+
+```
+$calendar_viewer(/parent/page,5)
+```
+
+---
+
+## Behavior
+
+- Targets pages with names like:
+
+```
+YYYY-MM-DD
+```
+
+- Displays newer pages first
+- Renders Markdown content
+- Resolves relative links based on each page path
+- Images can be clicked to open a preview overlay
+
+---
+
+## Example
+
+```
+$calendar(locale=ja, separator=-)
+
+$calendar_viewer()
+```
+
+---
 
 ## License
 
 MIT
 
+---
+
 ## Notes
 
-This repository is forked for internal GROWI operation.
-The original source is licensed under the MIT License.
+This repository is forked and customized for internal GROWI usage.

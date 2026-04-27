@@ -1,7 +1,7 @@
 {
   "name": "growi-plugin-calendar",
-  "version": "1.1.0",
-  "description": "GROWI calendar plugin with existing page highlights and calendar viewer support",
+  "version": "1.2.0",
+  "description": "Calendar plugin for GROWI with date page highlighting and viewer",
   "license": "MIT",
   "keywords": [
     "growi",
