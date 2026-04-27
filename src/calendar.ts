@@ -177,6 +177,15 @@ export const plugin: Plugin = function() {
           ${items.join('')}
         </div>
       `;
+      viewerElement.querySelectorAll('.growi-calendar-viewer-content button img')
+        .forEach((img) => {
+          img.parentElement?.addEventListener('click', () => {
+            openImagePreview(
+              img.getAttribute('src') ?? '',
+              img.getAttribute('alt') ?? '',
+            );
+          });
+        });
     };
 
     const normalizeRelativeLinks = (content: string, pagePath: string) => {
@@ -192,6 +201,22 @@ export const plugin: Plugin = function() {
           return `](${pageDir}/${normalizedLinkPath})`;
         },
       );
+    };
+
+    const openImagePreview = (src: string, alt: string) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'growi-calendar-viewer-image-overlay';
+      overlay.innerHTML = `
+        <div class="growi-calendar-viewer-image-preview">
+          <img src="${src}" alt="${alt}">
+        </div>
+      `;
+
+      overlay.addEventListener('click', () => {
+        overlay.remove();
+      });
+
+      document.body.appendChild(overlay);
     };
 
     const wrapImagesWithButton = (html: string) => {
@@ -236,25 +261,48 @@ export const plugin: Plugin = function() {
           padding: 0.4rem 0.6rem !important;
           border-left: 8px solid #777799 !important;
           border-top: none !important;
-          border-bottom: 1px solid #777799 !important;
+          border-bottom: none !important;
           border-right: none !important;
           background-color: transparent !important;
           margin-top: 16px !important;
           margin-bottom: 8px !important;
           font-size: 2.0rem !important;
-          font-weight: bold !important;
+          font-weight: 400 !important;
           line-height: 1.2 !important;
+          text-decoration: none !important;
         }
-
         .wiki .growi-calendar-viewer-date a,
         .markdown-body .growi-calendar-viewer-date a {
-          color: #1a0dab !important;
+          color: #444455 !important;
+          text-decoration: none !important;
+          border-bottom: none !important;
+          font-weight: 400 !important;
+        }
+        .wiki .growi-calendar-viewer-date a:hover,
+        .markdown-body .growi-calendar-viewer-date a:hover {
+          text-decoration: none !important;
+          border-bottom: none !important;
         }
         .growi-calendar-viewer-content img {
           max-width: 100%;
           height: auto;
         }
-      `;
+        .growi-calendar-viewer-image-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          background: rgba(0, 0, 0, 0.75);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: zoom-out;
+        }
+        .growi-calendar-viewer-image-preview img {
+          max-width: 90vw;
+          max-height: 90vh;
+          object-fit: contain;
+        }
+        `;
       document.head.appendChild(style);
     };
 
@@ -331,8 +379,8 @@ export const plugin: Plugin = function() {
                 settings: {
                   lang,
                   selected: {
-                    month: Number.isNaN(month as unknown as number) ? new Date().getMonth() : parseInt(month) - 1,
-                    year: Number.isNaN(year as unknown as number) ? new Date().getFullYear() : parseInt(year),
+                    month: Number.isNaN(Number(month)) ? new Date().getMonth() : Number(month) - 1,
+                    year: Number.isNaN(Number(year)) ? new Date().getFullYear() : Number(year),
                   },
                 },
                 actions: {
@@ -341,14 +389,14 @@ export const plugin: Plugin = function() {
                     clicked = true;
                     const page = self.selectedDates[0];
                     const resolvedBasePath = await resolveBasePath(basePath);
-                    location.href = resolvedBasePath === '' ? `/${page}` : `${resolvedBasePath}/${page}`;
+                    window.location.href = resolvedBasePath === '' ? `/${page}` : `${resolvedBasePath}/${page}`;
                   },
                 },
               });
               cal.init();
 
-              const targetMonth = Number.isNaN(month as unknown as number) ? new Date().getMonth() : parseInt(month) - 1;
-              const targetYear = Number.isNaN(year as unknown as number) ? new Date().getFullYear() : parseInt(year);
+              const targetMonth = Number.isNaN(Number(month)) ? new Date().getMonth() : Number(month) - 1;
+              const targetYear = Number.isNaN(Number(year)) ? new Date().getFullYear() : Number(year);
 
               void refreshExistingDateHighlights(calendarId, basePath, targetYear, targetMonth);
 
