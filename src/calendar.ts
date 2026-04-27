@@ -273,14 +273,16 @@ export const plugin: Plugin = function() {
       const items = await Promise.all(
         pages.map(async(page) => {
           const date = page.path?.split('/').pop() ?? '';
-          const content = await fetchPageContent(page.path ?? '');
-          const htmlContent = marked.parse(content) as string;
+          const pagePath = page.path ?? '';
+          const content = await fetchPageContent(pagePath);
+          const normalizedContent = normalizeRelativeLinks(content, pagePath);
+          const htmlContent = marked.parse(normalizedContent) as string;
 
           return `
             <div class="growi-calendar-viewer-item">
-              <div class="growi-calendar-viewer-date">
-                <strong>${date}</strong>
-              </div>
+              <h1 class="growi-calendar-viewer-date">
+                <a href="${encodeURI(pagePath)}">${date}</a>
+              </h1>
               <div class="growi-calendar-viewer-content markdown-body">
                 ${htmlContent}
               </div>
@@ -294,6 +296,21 @@ export const plugin: Plugin = function() {
           ${items.join('')}
         </div>
       `;
+    };
+
+    const normalizeRelativeLinks = (content: string, pagePath: string) => {
+      const pageDir = pagePath.split('/').slice(0, -1).join('/');
+
+      return content.replace(
+        /\]\((?!https?:\/\/|\/|#)(.*?)\)/g,
+        (_match, linkPath) => {
+          const normalizedLinkPath = linkPath.startsWith('./')
+            ? linkPath.slice(2)
+            : linkPath;
+
+          return `](${pageDir}/${normalizedLinkPath})`;
+        },
+      );
     };
 
     const injectStyle = () => {
@@ -315,8 +332,21 @@ export const plugin: Plugin = function() {
           border-bottom: 1px solid #ddd;
         }
         .growi-calendar-viewer-date {
-          font-weight: bold;
-          margin-bottom: 8px;
+          padding: 0.4rem 0.6rem !important;
+          border-left: 8px solid #777799 !important;
+          border-top: 1px solid #777799 !important;
+          border-bottom: 1px solid #777799 !important;
+          border-right: none !important;
+          background-color: transparent !important;
+          color: #444455 !important;
+          margin-top: 16px !important;
+          margin-bottom: 8px !important;
+          font-size: 1.6rem !important;
+          font-weight: bold !important;
+        }
+        .growi-calendar-viewer-date a {
+          color: #444455 !important;
+          text-decoration: none !important;
         }
         .growi-calendar-viewer-content img {
           max-width: 100%;
