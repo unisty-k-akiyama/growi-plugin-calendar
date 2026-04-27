@@ -19,9 +19,9 @@ export const plugin: Plugin = function() {
     const pagesCache = new Map<string, { path?: string }[]>();
 
     const getCurrentPagePath = async() => {
-      if (location.pathname === '/') return '';
+      if (window.location.pathname === '/') return '';
 
-      const pageId = location.pathname.replace(/^\//, '').replace(/\/$/, '');
+      const pageId = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
 
       try {
         const res = await fetch(`/_api/v3/page?pageId=${pageId}`);
@@ -32,10 +32,10 @@ export const plugin: Plugin = function() {
         }
       }
       catch (e) {
-        console.warn('[calendar] failed to resolve current page path:', e);
+        // console.warn('[calendar] failed to resolve current page path:', e);
       }
 
-      return decodeURIComponent(location.pathname).replace(/\/$/, '');
+      return decodeURIComponent(window.location.pathname).replace(/\/$/, '');
     };
 
     const resolveBasePath = async(basePath: string) => {
@@ -96,7 +96,7 @@ export const plugin: Plugin = function() {
         );
 
         if (!res.ok) {
-          console.warn('[calendar] failed to fetch pages list:', res.status);
+          // console.warn('[calendar] failed to fetch pages list:', res.status);
           return allPages;
         }
 
