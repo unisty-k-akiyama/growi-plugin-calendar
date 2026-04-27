@@ -17,6 +17,7 @@ export const plugin: Plugin = function() {
   return (tree) => {
     const existingDatesCache = new Map<string, string[]>();
     const pagesCache = new Map<string, { path?: string }[]>();
+    const pageContentCache = new Map<string, string>();
 
     const getCurrentPagePath = async() => {
       if (window.location.pathname === '/') return '';
@@ -86,7 +87,7 @@ export const plugin: Plugin = function() {
         return cached;
       }
 
-      const limit = 100;
+      const limit = 1000;
       let page = 1;
       const allPages: { path?: string }[] = [];
 
@@ -117,8 +118,7 @@ export const plugin: Plugin = function() {
     };
 
     const getLatestDatePages = async(basePath: string, limit: number) => {
-      const resolvedBasePath = await resolveBasePath(basePath);
-      const pages = await fetchPagesByBasePath(resolvedBasePath);
+      const pages = await fetchPagesByBasePath(basePath);
 
       return pages
         .filter((page) => {
@@ -345,6 +345,11 @@ export const plugin: Plugin = function() {
     };
 
     const fetchPageContent = async(pagePath: string) => {
+      const cached = pageContentCache.get(pagePath);
+      if (cached != null) {
+        return cached;
+      }
+
       const res = await fetch(`/_api/v3/page?path=${encodeURIComponent(pagePath)}`);
 
       if (!res.ok) {
@@ -352,8 +357,11 @@ export const plugin: Plugin = function() {
       }
 
       const json = await res.json();
+      const content = json.page?.revision?.body ?? '';
 
-      return json.page?.revision?.body ?? '';
+      pageContentCache.set(pagePath, content);
+
+      return content;
     };
 
     visit(tree, (node) => {
